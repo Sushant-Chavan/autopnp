@@ -29,7 +29,7 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 	//This Alogrithm trains two AdaBoost-classifiers from OpenCV. It takes the given training maps and finds the Points
 	//that are labeled as a room/hallway and calculates the features defined in ipa_room_segmentation/features.h.
 	//Then these vectors are put in a format that OpenCV expects for the classifiers and then they are trained.
-	std::vector<float> labels_for_hallways, labels_for_rooms;
+	std::vector<int> labels_for_hallways, labels_for_rooms;
 	std::vector<std::vector<float> > hallway_features, room_features;
 	std::vector<double> temporary_beams;
 	std::vector<float> temporary_features;
@@ -49,11 +49,11 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 					//check for label of each Pixel (if it belongs to rooms the label is 1, otherwise it is -1)
 					if (room_training_maps[map].at<unsigned char>(y, x) > 250)
 					{
-						labels_for_rooms.push_back(-1.0);
+						labels_for_rooms.push_back(-1);
 					}
 					else
 					{
-						labels_for_rooms.push_back(1.0);
+						labels_for_rooms.push_back(1);
 					}
 					//simulate the beams and features for every position and save it
 					raycasting_.raycasting(room_training_maps[map], cv::Point(x, y), temporary_beams);
@@ -81,11 +81,11 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 					//check for label of each Pixel (if it belongs to hallways the label is 1, otherwise it is -1)
 					if (hallway_training_maps[map].at<unsigned char>(y, x) > 250)
 					{
-						labels_for_hallways.push_back(-1.0);
+						labels_for_hallways.push_back(-1);
 					}
 					else
 					{
-						labels_for_hallways.push_back(1.0);
+						labels_for_hallways.push_back(1);
 					}
 					//simulate the beams and features for every position and save it
 					raycasting_.raycasting(hallway_training_maps[map], cv::Point(x, y), temporary_beams);
@@ -103,22 +103,22 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 	}
 
 	//save the found labels and features in Matrices --> hallway
-	cv::Mat hallway_labels_mat(labels_for_hallways.size(), 1, CV_32FC1);
+	cv::Mat hallway_labels_mat(labels_for_hallways.size(), 1, CV_32SC1);
 	cv::Mat hallway_features_mat(hallway_features.size(), lsf.get_feature_count(), CV_32FC1);
 	for (int i = 0; i < labels_for_hallways.size(); i++)
 	{
-		hallway_labels_mat.at<float>(i, 0) = labels_for_hallways[i];
+		hallway_labels_mat.at<int>(i, 0) = labels_for_hallways[i];
 		for (int f = 0; f < hallway_features[i].size(); f++)
 		{
 			hallway_features_mat.at<float>(i, f) = (float) hallway_features[i][f];
 		}
 	}
 	//save the found labels and features in Matrices --> rooms
-	cv::Mat room_labels_mat(labels_for_rooms.size(), 1, CV_32FC1);
+	cv::Mat room_labels_mat(labels_for_rooms.size(), 1, CV_32SC1);
 	cv::Mat room_features_mat(room_features.size(), lsf.get_feature_count(), CV_32FC1);
 	for (int i = 0; i < labels_for_rooms.size(); i++)
 	{
-		room_labels_mat.at<float>(i, 0) = labels_for_rooms[i];
+		room_labels_mat.at<int>(i, 0) = labels_for_rooms[i];
 		for (int f = 0; f < room_features[i].size(); f++)
 		{
 			room_features_mat.at<float>(i, f) = (float) room_features[i][f];
@@ -156,12 +156,13 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 	hallway_boost_.save(filename_hallway.c_str(), "boost");
 #else
 	// Train a boost classifier
-	hallway_boost_->create();
+	hallway_boost_ = cv::ml::Boost::create();
 	hallway_boost_->setBoostType(cv::ml::Boost::DISCRETE);
 	hallway_boost_->setWeakCount(350);
 	hallway_boost_->setWeightTrimRate(0);
 	hallway_boost_->setMaxDepth(2);
 	hallway_boost_->setUseSurrogates(false);
+    hallway_boost_->setPriors(cv::Mat());
 	hallway_boost_->train(hallway_features_mat, cv::ml::ROW_SAMPLE, hallway_labels_mat);
 	//save the trained booster
 	hallway_boost_->save(filename_hallway.c_str());
@@ -177,12 +178,14 @@ void AdaboostClassifier::trainClassifiers(const std::vector<cv::Mat>& room_train
 	room_boost_.save(filename_room.c_str(), "boost");
 #else
 	// Train a boost classifier
-	room_boost_->create();
+	room_boost_ = cv::ml::Boost::create();
 	room_boost_->setBoostType(cv::ml::Boost::DISCRETE);
 	room_boost_->setWeakCount(350);
 	room_boost_->setWeightTrimRate(0);
 	room_boost_->setMaxDepth(2);
 	room_boost_->setUseSurrogates(false);
+    room_boost_->setPriors(cv::Mat());
+	room_boost_->train(room_features_mat, cv::ml::ROW_SAMPLE, room_labels_mat);
 	//save the trained booster
 	room_boost_->save(filename_room.c_str());
 #endif
