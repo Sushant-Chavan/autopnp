@@ -1,0 +1,19 @@
+- git:
+    local-name: autopnp 
+    uri: git@github.com:Sushant-Chavan/autopnp.git
+    version: kinetic
+
+- git:
+    local-name: cob_object_perception 
+    uri: https://github.com/ipa320/cob_object_perception.git
+    version: indigo_dev
+
+- git:
+    local-name: cob_environment_perception 
+    uri: https://github.com/ipa320/cob_environment_perception.git
+    version: indigo_dev
+
+- git:
+    local-name: cob_scenario_states 
+    uri: https://github.com/ipa320/cob_scenario_states.git
+    version: indigo_dev
