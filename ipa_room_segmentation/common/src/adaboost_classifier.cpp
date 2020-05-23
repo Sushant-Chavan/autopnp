@@ -238,7 +238,7 @@ void AdaboostClassifier::segmentMap(const cv::Mat& map_to_be_labeled, cv::Mat& s
 #if CV_MAJOR_VERSION == 2
 		room_boost_.load(filename_room.c_str());
 #else
-		room_boost_->load(filename_room.c_str());
+        room_boost_ = cv::ml::Boost::load(filename_room.c_str());
 #endif
 
 		std::string filename_hallway = classifier_storage_path + "semantic_hallway_boost.xml";
@@ -248,7 +248,7 @@ void AdaboostClassifier::segmentMap(const cv::Mat& map_to_be_labeled, cv::Mat& s
 #if CV_MAJOR_VERSION == 2
 		hallway_boost_.load(filename_hallway.c_str());
 #else
-		hallway_boost_->load(filename_hallway.c_str());
+        hallway_boost_ = cv::ml::Boost::load(filename_hallway.c_str());
 #endif
 
 		trained_ = true;
@@ -274,8 +274,8 @@ void AdaboostClassifier::segmentMap(const cv::Mat& map_to_be_labeled, cv::Mat& s
 				float room_sum = room_boost_.predict(features_mat, cv::Mat(), cv::Range::all(), false, true);
 				float hallway_sum = hallway_boost_.predict(features_mat, cv::Mat(), cv::Range::all(), false, true);
 #else
-				float room_sum = room_boost_->predict(features_mat, cv::Mat(), cv::ml::Boost::RAW_OUTPUT);
-				float hallway_sum = hallway_boost_->predict(features_mat, cv::Mat(), cv::ml::Boost::RAW_OUTPUT);
+				float room_sum = room_boost_->predict(features_mat, cv::noArray(), cv::ml::Boost::RAW_OUTPUT);
+				float hallway_sum = hallway_boost_->predict(features_mat, cv::noArray() , cv::ml::Boost::RAW_OUTPUT);
 #endif
 				//get the certanity-values for each class (it shows the probability that it belongs to the given class)
 				double room_certanity = (std::exp((double) room_sum)) / (std::exp(-1 * (double) room_sum) + std::exp((double) room_sum));
